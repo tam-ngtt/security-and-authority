@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const ejs = require("ejs");
 const bodyParser = require("body-parser");
@@ -17,8 +18,7 @@ const userSchema = new mongoose.Schema({
   password: String
 });
 
-var secret = "Thisismysecret";
-userSchema.plugin(encrypt, { secret: secret}, {encryptedFields: ["password"]});
+userSchema.plugin(encrypt, {secret: process.env.SECRET, encryptedFields: ['password']});
 
 const User = new mongoose.model("User", userSchema);
 
@@ -48,16 +48,23 @@ app.post("/register", function(req, res){
   })
 });
 
+//Check tung phan de len tung level (decrypt inside findOne)
 app.post("/login", function(req, res){
-  User.findOne({email: req.body.username, password:req.body.password}, function(err, foundUser){
-    if (foundUser){
-      res.render("secrets");
-    } else {
-      console.log("User doesn't exist");
-    }
-  })
-});
+  const username = req.body.username;
+  const password = req.body.password;
 
+  User.findOne({email: username}, function(err, foundUser){
+    if (err) {
+      console.log(err);
+    } else {
+      if (foundUser) {
+        if (foundUser.password === password) {
+          res.render("secrets");
+        }
+      }
+    }
+  });
+});
 
 
 app.listen(3000, function(){
